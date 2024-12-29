@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 using NSubstitute.ReturnsExtensions;
@@ -91,5 +92,75 @@ public class UserControllerTests
         // Assert
         result.StatusCode.Should().Be(200);
         result.Value.As<IEnumerable<UserResponse>>().Should().BeEquivalentTo(usersResponse);
+    }
+
+    [Fact]
+    public async Task Create_ReturnOkAndObject_WhenUserExists()
+    {
+        // Arrange
+        var createUserRequest = new CreateUserRequest
+        {
+            FullName = "Nick Chapsas"
+        };
+
+        _userService.CreateAsync(Arg.Any<User>()).Returns(true);
+
+        // Act
+        var result = (CreatedAtActionResult)await _sut.Create(createUserRequest);
+
+        // Assert
+        result.StatusCode.Should().Be(StatusCodes.Status201Created);
+        result.RouteValues.Should().ContainKey("id");
+        result.RouteValues!["id"].Should().BeOfType<Guid>();
+    }
+
+    [Fact]
+    public async Task Create_ReturnBadRequest_WhenNotCreated()
+    {
+        // Arrange
+        var createUserRequest = new CreateUserRequest
+        {
+            FullName = "Nick Chapsas"
+        };
+
+        _userService.CreateAsync(Arg.Any<User>()).Returns(false);
+
+        // Act
+        var result = (BadRequestResult)await _sut.Create(createUserRequest);
+
+        // Assert
+        result.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteById_ReturnOk_WhenUserIsDeletedSuccessfully()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Nick Chapsas"
+        };
+        _userService.DeleteByIdAsync(user.Id).Returns(true);
+        var userResponse = user.ToUserResponse();
+
+        // Act
+        var result = (OkResult)await _sut.DeleteById(user.Id);
+
+        // Assert
+        result.StatusCode.Should().Be(StatusCodes.Status200OK);
+    }
+
+    [Fact]
+    public async Task DeleteById_ReturnNotFoundResult_WhenUserIsNotDeleted()
+    {
+        // Arrange
+        _userService.DeleteByIdAsync(Arg.Any<Guid>()).Returns(false);
+
+        // Act
+        var result = (NotFoundResult)await _sut.DeleteById(Guid.NewGuid());
+
+        // Assert
+        result.StatusCode.Should().Be(StatusCodes.Status404NotFound);
     }
 }
