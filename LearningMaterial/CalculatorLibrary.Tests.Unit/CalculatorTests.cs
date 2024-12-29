@@ -51,7 +51,7 @@ public class CalculatorTests
     [Theory]
     [InlineData(5, 5, 1)]
     [InlineData(15, 5, 3)]
-    [InlineData(5, 0, 0, Skip = "Division by zero is mathematically impossible")]
+    [InlineData(5, 0, 0, Skip = "Divide by Zero")]
     public void Divide_ShouldDivideTwoNumbers_TwoNumbersAreIntegers(int a, int b, int expected)
     {
         // Act
