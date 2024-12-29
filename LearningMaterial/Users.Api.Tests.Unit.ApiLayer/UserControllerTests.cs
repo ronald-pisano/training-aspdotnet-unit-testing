@@ -103,13 +103,22 @@ public class UserControllerTests
             FullName = "Nick Chapsas"
         };
 
-        _userService.CreateAsync(Arg.Any<User>()).Returns(true);
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = createUserRequest.FullName
+        };
+
+        _userService.CreateAsync(Arg.Do<User>(x => user = x)).Returns(true);
 
         // Act
         var result = (CreatedAtActionResult)await _sut.Create(createUserRequest);
 
         // Assert
+        var expectedUser = user.ToUserResponse();
+
         result.StatusCode.Should().Be(StatusCodes.Status201Created);
+        result.Value.Should().BeEquivalentTo(expectedUser);
         result.RouteValues.Should().ContainKey("id");
         result.RouteValues!["id"].Should().BeOfType<Guid>();
     }
